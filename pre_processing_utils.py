@@ -11,7 +11,7 @@ def remove_corrupted_rows(table_catalog):
     return table_catalog
 
 
-def get_puls_and_AGN_dataframe(table_catalog):
+def get_associated_sources_dataframe(table_catalog):
     sources_category = []
     sources_data = []
 
@@ -34,16 +34,42 @@ def get_puls_and_AGN_dataframe(table_catalog):
         columns=SOURCES_ORIGINAL_ATTRIBUTES + HARDN_RATIO_ATTRIBUTES,
     )
     print("Number on Nan values= " + str(df.isnull().sum().sum()))
-    df = df.loc[PULS_LABELS + AGN_LABELS]  # Filter by index only pulsars and AGNs
+    # df = df.loc[PULS_LABELS + AGN_LABELS]  # Filter by index only pulsars and AGNs
+    return df
+
+def get_unassociated_sources_dataframe(table_catalog):
+    sources_data = []
+
+    for i in range(0, len(table_catalog)):
+        source_row = table_catalog[i]
+        if source_row["CLASS1"] == "     ":
+            source_data = []
+            for attribute in SOURCES_ORIGINAL_ATTRIBUTES:
+                source_data.append(source_row[attribute])
+
+            source_hardn_ratios = get_source_hardn_ratios(source_row)
+
+            sources_data.append(source_data + source_hardn_ratios)
+
+    sources_category = [UNASSOCIATED_SOURCES_LABEL]*len(sources_data)
+    df = pd.DataFrame(
+        sources_data,
+        index= sources_category,
+        columns=SOURCES_ORIGINAL_ATTRIBUTES + HARDN_RATIO_ATTRIBUTES,
+    )
+    print("Number on Nan values= " + str(df.isnull().sum().sum()))
     return df
 
 
-def scale_df_data(df):
-    scaler = StandardScaler()
-    scaled_data = scaler.fit_transform(df.values)
+def scale_df_data(df, scaler=None):
+    if scaler is None:
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(df.values)
+    else:
+        scaled_data = scaler.transform(df.values)
     scaled_df = pd.DataFrame(scaled_data, index=df.index, columns=df.columns)
 
-    return scaled_df
+    return scaled_df, scaler
 
 
 def get_sources_df_by_lables(df, labels):
@@ -75,7 +101,8 @@ def get_network_data_from_df_data(df, random_state=42):
     mapping = {label: 0 for label in PULS_LABELS}
     mapping.update({label: 1 for label in AGN_LABELS})
 
-    y_integers = df.index.map(mapping)
+    #Mapping to "2" for the "Others" sources
+    y_integers = df.index.map(mapping).fillna(2).astype(int)
 
     if y_integers.isna().any():
         raise Exception("Indices found that don't match provided label lists.")

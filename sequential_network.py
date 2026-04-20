@@ -100,7 +100,7 @@ class Sequential_Network:
     def load_model_from_file(file_path):
         return keras.saving.load_model(file_path)
 
-    def make_prediction(self, x_test, y_test, categories):
+    def calc_test_confusion_matrix(self, x_test, y_test, categories):
         # 1. Get the raw probability distributions (e.g., [[0.1, 0.9], [0.8, 0.2]])
         probabilities = self.model.predict(x_test)
 
@@ -121,6 +121,26 @@ class Sequential_Network:
         )
 
         return conf_matrix
+    
+    def calc_prediction_probabilities(self, x_test, y_test=None):
+        # 1. Get the raw probability distributions (e.g., [[0.1, 0.9], [0.8, 0.2]])
+        probabilities = self.model.predict(x_test)
+        sources_probabilities = []
+
+        if (y_test is not None):
+            if len(y_test.shape) > 1 and y_test.shape[1] > 1:
+                y_test_integers = np.argmax(y_test, axis=1)
+            else:
+                y_test_integers = y_test
+        
+            for probs, source_int in zip(probabilities, y_test_integers):
+                sources_probabilities.append((source_int, probs))
+
+        else:
+            for probs in probabilities:
+                sources_probabilities.append(probs)
+
+        return sources_probabilities
 
     def get_performance_metrics(self, x_test, y_test):
         # 1. Get predictions (integers)

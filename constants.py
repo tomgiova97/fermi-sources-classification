@@ -1,7 +1,10 @@
-SOURCES_CATEGORIES = ["PULSAR", "AGN"]
+SOURCES_CATEGORIES = ["PULSAR", "AGN", "OTHERS"]
+
 
 # Labels used in the 4FGL file to indicate pulsar sources
 PULS_LABELS = ["PSR", "psr"]
+
+UNASSOCIATED_SOURCES_LABEL = "Unass."
 
 # Labels used in the 4FGL file to indicate Active-Galactic-Nuclei sources
 AGN_LABELS = [
